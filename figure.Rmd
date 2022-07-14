@@ -1,0 +1,43 @@
+---
+title: "Visualization"
+author: "Ajna Kertesz"
+date: '2022-07-14'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r visual}
+
+###OVERALL CONFORMITY PREFERENCE###
+#visual
+#create prop table
+conf_prop<-prop.table(with(MV_final, table(Conformity_pref, Trait, Video_Gender, Country)), margin=2)
+                      
+conf_prop<- as.data.frame(conf_prop)
+
+conf_prop<-conf_prop[!(conf_prop$Conformity_pref == 0),]
+
+
+#calaculate errors 
+
+df1 <- conf_prop %>% mutate(sd = sd(Freq))
+
+df1$Country=as.factor(df1$Country)
+
+head(df1)
+
+### create the figure
+ggplot(df1, 
+       aes(Video_Gender, y = Freq, x = Country, color = Video_Gender)) + 
+  geom_point(stat = "summary", fun.y = "mean", shape= 16, size =3, position = position_dodge(width = 1)) +
+  geom_errorbar(aes(ymin = Freq - sd, ymax = Freq + sd),linetype = "dotted", position = position_dodge(width = 1))+
+  facet_wrap(vars(Trait)) + 
+  ylab ("Proportion of Conformity Endorsement") +
+  scale_fill_discrete(name = "Gender", labels = c("Male", "Female"))
+
+```
+

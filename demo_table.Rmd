@@ -1,0 +1,94 @@
+---
+title: "Demographics Table"
+author: "Ajna Kertesz"
+date: '2022-05-27'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r data, echo=FALSE}
+library(tidyverse)
+library(readr)
+library(psych)
+library(dplyr)
+library(car)
+
+MV_WEIRD <- read_csv("MV_WEIRD_Complete.csv")
+
+
+```
+
+
+
+
+```{r demo table, echo=FALSE}
+library(htmlTable)
+library(table1)
+library(knitr)
+library(kableExtra)
+library(magrittr)
+library(gridExtra)
+
+
+
+d_MV<-MV_WEIRD%>%dplyr::select(Country, Gender, Age, parent, employment,ethnicity, Education, SES, occupation)
+
+###Collapse employment
+
+d_MV$employment<- ifelse(grepl("Casual", d_MV$employment, fixed=TRUE), "Part-time", d_MV$employment)
+
+
+###Recode Race
+
+d_MV$ethnicity<- ifelse(grepl(",", d_MV$ethnicity, fixed=TRUE), "More than one", d_MV$ethnicity)
+d_MV$ethnicity<- ifelse(grepl("Central American", d_MV$ethnicity, fixed=TRUE), "Other", d_MV$ethnicity)
+d_MV$ethnicity<- ifelse(grepl("Aboriginal Australian", d_MV$ethnicity, fixed=TRUE), "Native/Indigenous", d_MV$ethnicity)
+
+d_MV$ethnicity<- ifelse(grepl("Māori/ Cook Island Māori", d_MV$ethnicity, fixed=TRUE), "Native/Indigenous", d_MV$ethnicity)
+
+d_MV$ethnicity<- ifelse(grepl("Native American", d_MV$ethnicity, fixed=TRUE), "Native/Indigenous", d_MV$ethnicity)
+
+###Recode education
+d_MV$Education<- ifelse(grepl("Some high/secondary school",
+d_MV$Education, fixed=TRUE), "Some high school or high school", d_MV$Education)
+
+d_MV$Education<- ifelse(grepl("High/Secondary school",
+d_MV$Education, fixed=TRUE), "Some high school or high school", d_MV$Education)
+
+d_MV$Education<- ifelse(grepl("Associate's defree or Certificate/Diploma", d_MV$Education, fixed=TRUE), "Bachelor’s degree or Associate’s degree", d_MV$Education)
+
+d_MV$Education<- ifelse(grepl("Bachelor's degree or Honors degree", d_MV$Education, fixed=TRUE), "Bachelor’s degree or Associate’s degree", d_MV$Education)
+
+d_MV$Education<- ifelse(grepl("Associate's degree or Certificate/Diploma", d_MV$Education, fixed=TRUE), "Bachelor’s degree or Associate’s degree", d_MV$Education)
+
+d_MV$Education<- ifelse(grepl("Master's degree",
+d_MV$Education, fixed=TRUE), "Post-graduate Degree", d_MV$Education)
+
+d_MV$Education<- ifelse(grepl("PhD or other higher postgraduate degrees",
+d_MV$Education, fixed=TRUE), "Post-graduate Degree", d_MV$Education)
+
+
+###Recode occupation
+
+d_MV$occupation<- ifelse(grepl(",", d_MV$occupation, fixed=TRUE), "More than one type of job", d_MV$occupation)
+
+
+d_MV$Country <- 
+  factor(d_MV$Country, 
+         levels=c(1,2,3,4,5),
+         labels=c("US", # Reference
+                  "Canada", 
+                  "UK",
+                  "Australia",
+                  "New Zealand"))
+
+demo_table<- table1(~ Gender + Age + parent + employment + ethnicity + Education + SES
+                    + occupation| Country, data=d_MV, render.missing=NULL, topclass="Rtable1-grid Rtable1-shade Rtable1-times")
+
+demo_table
+
+
+```

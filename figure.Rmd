@@ -28,16 +28,22 @@ df1 <- conf_prop %>% mutate(sd = sd(Freq))
 
 df1$Country=as.factor(df1$Country)
 
-head(df1)
+df1$Freq<-df1$Freq*10
+
+
+df1$Trait<- relevel(df1$Trait, "Smart", "Behave", "Grades")
+df1$Country<- relevel(df1$Country, "Australia", "Canada", "NZ", "UK", "US")
+
 
 ### create the figure
 ggplot(df1, 
-       aes(Video_Gender, y = Freq, x = Country, color = Video_Gender)) + 
+       aes(Video_Gender, y = Freq, x = Country, color = Video_Gender, ylim(0.1,1.0))) + 
   geom_point(stat = "summary", fun.y = "mean", shape= 16, size =3, position = position_dodge(width = 1)) +
   geom_errorbar(aes(ymin = Freq - sd, ymax = Freq + sd),linetype = "dotted", position = position_dodge(width = 1))+
   facet_wrap(vars(Trait)) + 
   ylab ("Proportion of Conformity Endorsement") +
-  scale_fill_discrete(name = "Gender", labels = c("Male", "Female"))
+  scale_color_manual(labels = c("Male", "Female"), values = c("Blue", " dark Red"))
+
 
 ```
 

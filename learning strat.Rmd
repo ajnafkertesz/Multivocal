@@ -1,0 +1,127 @@
+---
+title: "Learning startegies"
+author: "Ajna Kertesz"
+date: '2022-08-08'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r learning strat}
+
+library(mix)
+
+
+MV_learning= MV_WEIRD %>% dplyr::select (Observation, Exploration, Copy, Instructions, Collabs, Country, PID, Education, )
+
+#recode countries to meaningful characters
+MV_learning$Country<- recode_factor(MV_learning$Country, `1`="US", `2`="Canada", `3`="UK", `4`="Australia", `5`="NZ")
+
+MV_final = MV_WEIRD %>% dplyr::select(Smart, Behave, Grades, Age, Gender, Country, Video_Gender, parent, Education, PID, SES, Edu_asp, income_annual, occupation) %>%  
+  mutate(Age = as.numeric(Age),
+        parent= ifelse(MV_WEIRD$parent=="Yes",1,0))
+
+
+#recode countries to meaningful characters
+MV_final$Country<- recode_factor(MV_final$Country, `1`="US", `2`="Canada", `3`="UK", `4`="Australia", `5`="NZ")
+
+#recode education to less groups
+MV_final$Education<- ifelse(grepl("Associate's defree or Certificate/Diploma", MV_final$Education, fixed=TRUE), "Bachelor’s degree or Associate’s degree", MV_final$Education)
+
+MV_final$Education<- ifelse(grepl("Bachelor's degree or Honors degree", MV_final$Education, fixed=TRUE), "Bachelor’s degree or Associate’s degree", MV_final$Education)
+
+MV_final$Education<- ifelse(grepl("Associate's degree or Certificate/Diploma", MV_final$Education, fixed=TRUE), "Bachelor’s degree or Associate’s degree", MV_final$Education)
+
+MV_final$Education<- ifelse(grepl("Some high/secondary school",
+MV_final$Education, fixed=TRUE), "Some high school or high school", MV_final$Education)
+
+MV_final$Education<- ifelse(grepl("High/Secondary school",
+MV_final$Education, fixed=TRUE), "Some high school or high school", MV_final$Education)
+
+MV_final$Education<- ifelse(grepl("Master's degree",
+MV_final$Education, fixed=TRUE), "Post-graduate Degree", MV_final$Education)
+
+MV_final$Education<- ifelse(grepl("PhD or other higher postgraduate degrees",
+MV_final$Education, fixed=TRUE), "Post-graduate Degree", MV_final$Education)
+
+MV_final$Education<- ifelse(grepl ("Some high school or high school" , MV_final$Education, fixed=TRUE),"1", MV_final$Education)
+MV_final$Education<- ifelse(grepl ("Some college/university" , MV_final$Education, fixed=TRUE),"2", MV_final$Education)
+
+MV_final$Education<- ifelse(grepl ( "Bachelor’s degree or Associate’s degree", MV_final$Education, fixed=TRUE),"3", MV_final$Education)
+MV_final$Education<- ifelse(grepl ("Post-graduate Degree" , MV_final$Education, fixed=TRUE),"4", MV_final$Education)
+
+#make education numeric, so we can use it in the analysis
+MV_final$Education<- as.numeric(MV_final$Education)
+
+
+#recode edu asp to numerical values
+MV_final$Edu_asp<- ifelse(grepl ("Some high/secondary school" , MV_final$Edu_asp, fixed=TRUE),"1", MV_final$Edu_asp)
+MV_final$Edu_asp<- ifelse(grepl ("High/Secondary school" , MV_final$Edu_asp, fixed=TRUE),"2", MV_final$Edu_asp)
+MV_final$Edu_asp<- ifelse(grepl ("Some college/university" , MV_final$Edu_asp, fixed=TRUE),"3", MV_final$Edu_asp)
+MV_final$Edu_asp<- ifelse(grepl ("Associate's degree or Certificate/Diploma" , MV_final$Edu_asp, fixed=TRUE),"4",MV_final$Edu_asp)
+MV_final$Edu_asp<- ifelse(grepl ("Bachelor's degree or Honors degree" , MV_final$Edu_asp, fixed=TRUE),"5",MV_final$Edu_asp)
+MV_final$Edu_asp<- ifelse(grepl ("Master's degree" , MV_final$Edu_asp, fixed=TRUE),"6",MV_final$Edu_asp)
+MV_final$Edu_asp<- ifelse(grepl ("PhD or other higher postgraduate degrees" , MV_final$Edu_asp, fixed=TRUE),"6",MV_final$Edu_asp)
+
+#calaculate errors with function
+
+data_summary <- function(data, varname, groupnames){
+  require(plyr)
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      sd = sd(x[[col]], na.rm=TRUE))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+ return(data_sum)
+}
+
+
+#reorder learning srategies
+MV_learning<- pivot_longer(
+  MV_learning,
+  cols=(c(Observation, Exploration, Copy, Instructions, Collabs)),
+  names_to = "Learning",
+  values_to = "Ranking",
+  values_drop_na = TRUE
+)
+
+#add errors to dataframe (geom_errorbar...)
+
+df <- data_summary(MV_learning, varname = "Ranking",
+                            groupnames=c("Country","Learning" ))
+
+df$Country=as.factor(df$Country)
+df$Learning=as.factor(df$Learning)
+
+
+
+ggplot(df,
+       aes(Learning, y= Ranking, x= Country, fill=Learning, color=Learning)) +
+  geom_point(stat = "summary", fun.y = "mean", shape = 16, size =3, position=position_dodge(width=0.5)) +
+  geom_errorbar(aes(ymin = Ranking - sd, ymax = Ranking + sd, width=0.5), linetype = "dotted", position=position_dodge(width=0.5))+
+  scale_y_continuous() +
+  ylab("Preference") +
+  scale_fill_brewer(palette = "Dark2") +
+  theme(legend.position = "right")
+  
+
+
+
+
+learn3 <- MV_WEIRD%>% 
+  dplyr::select(Observation, Exploration, Copy, Instructions, Collabs) %>% 
+  single_imputation() %>% 
+  estimate_profiles(3)
+
+plot_profiles(learn3, add_line=TRUE)
+
+MV_WEIRD$ethnicity_other
+```
+
+
+
+```

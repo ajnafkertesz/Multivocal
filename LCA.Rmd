@@ -1,0 +1,135 @@
+---
+title: "LCA for teaching styles"
+author: "Ajna Kertesz"
+date: '2022-08-08'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Latent Class Analysis
+
+```{r lca}
+#install.packages("devtools")
+#devtools::install_github("dr-JT/datawrangling")
+library(datawrangling)
+library(poLCA)
+library(reshape2)
+
+#select variables and reformat data so we have 3 columns with numerical values
+
+MV_teaching<- MV_WEIRD %>% dplyr::select (Teach_expect_1, Teach_expect_2, Teach_expect_3, Teach_expect_4, Teach_expect_5, Teach_expect_6, Country, PID, Smart, Behave, Grades, Video_Gender)
+
+#dummy code trait
+MV_teachingLCA<- pivot_longer(
+  MV_teaching,
+  cols=(c(Smart, Behave, Grades)),
+  names_to = "Trait",
+  values_to = "Conformity_pref",
+  values_drop_na = TRUE
+)
+
+#convert all binary IVs to factors
+MV_teachingLCA <- within(MV_teachingLCA, {
+  Trait <- factor(Trait)
+  Video_Gender <- factor(Video_Gender)
+})
+
+MV_teachingLCA$Country<- recode_factor(MV_teachingLCA$Country, `1`="US", `2`="Canada", `3`="UK", `4`="Australia", `5`="NZ")
+
+MV_teachingLCA<-drop_na(MV_teachingLCA)
+
+MV_teachingLCA<- MV_teachingLCA %>%
+  datawrangling::composite(variables = c("Teach_expect_1", "Teach_expect_2", "Teach_expect_5"), name = "Rote", standardize = FALSE)
+
+MV_teachingLCA<- MV_teachingLCA %>%
+  datawrangling::composite(variables = c("Teach_expect_3", "Teach_expect_4"), name = "Free", standardize = FALSE)
+
+MV_teachingLCA<- MV_teachingLCA %>%
+  datawrangling::composite(variables = c("Teach_expect_6"), name = "Balanced", standardize = FALSE)
+
+library(mclust)
+library(tidyLPA)
+
+MV_teaching<- as_tibble(MV_teaching)
+
+#rename teaching items to meaningful labels
+
+dplyr::rename(MV_teaching, outcome = Teach_expect_1) -> MV_teaching
+dplyr::rename(MV_teaching, instructions = Teach_expect_2) -> MV_teaching
+dplyr::rename(MV_teaching, exploration = Teach_expect_3) -> MV_teaching
+dplyr::rename(MV_teaching, teamwork = Teach_expect_4) -> MV_teaching
+dplyr::rename(MV_teaching, modelling = Teach_expect_5) -> MV_teaching
+dplyr::rename(MV_teaching, neutral = Teach_expect_6) -> MV_teaching
+
+#try LCA with 1 class only
+
+teach1 <- MV_teaching%>% 
+  dplyr::select(Teach_expect_1, Teach_expect_2, Teach_expect_3, Teach_expect_4, Teach_expect_5, Teach_expect_6) %>% 
+  single_imputation() %>% 
+  estimate_profiles(1)%>%
+  print()
+
+# 2 classes
+
+teach2 <- MV_teaching%>% 
+  dplyr::select(Teach_expect_1, Teach_expect_2, Teach_expect_3, Teach_expect_4, Teach_expect_5, Teach_expect_6) %>% 
+  single_imputation() %>% 
+  estimate_profiles(2)%>%
+  print()
+
+#three classes -> final model
+
+teach3 <- MV_teaching%>% 
+  dplyr::select(outcome, instructions, exploration, teamwork, modelling, neutral) %>% 
+  single_imputation() %>% 
+  estimate_profiles(3)
+  
+#compare 1-3 models
+teach13 <- MV_teaching%>% 
+  dplyr::select(Teach_expect_1, Teach_expect_2, Teach_expect_3, Teach_expect_4, Teach_expect_5, Teach_expect_6) %>% 
+  single_imputation() %>% 
+  estimate_profiles(1:3)
+
+#visualize the 3 classess model  
+
+plot_profiles(teach3, add_line=TRUE)
+plot_density(teach3)
+plot_bivariate(teach3)
+
+
+#save LCA as a tibble
+MV_teachLCA<-get_data(teach3)
+get_fit(teach13)
+get_estimates(teach13)
+
+#merge class status to the original dataset
+
+total <- cbind(MV_WEIRD,MV_teachLCA)
+
+MV_WEIRD_total<- pivot_longer(
+  total,
+  cols=(c(Smart, Behave, Grades)),
+  names_to = "Trait",
+  values_to = "Conformity_pref",
+  values_drop_na = TRUE
+)
+
+#convert all binary IVs to factors
+MV_WEIRD_total <- within(MV_WEIRD_total, {
+  Trait <- factor(Trait)
+  Video_Gender <- factor(Video_Gender)
+  parent <- factor(parent)
+  Class<- factor(Class)
+})
+
+#run multi level multiple regression with class identity -> significant!
+class_model<- glmer(Conformity_pref ~ Trait + Video_Gender + Class +(1 | PID) , data = MV_WEIRD_total, family=binomial(link = "logit"))
+
+#summarize and view model
+summary(class_model)
+tab_model(class_model)
+```
+

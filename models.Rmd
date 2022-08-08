@@ -10,10 +10,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r models}
+````{r  conformity}
 
-###Exploratory models###
 
+######
 #null model: just trait and video gender 
 
 MV_final$Country<- relevel(MV_final$Country, ref="NZ")
@@ -22,66 +22,113 @@ trait_model0<- glmer(Conformity_pref ~ Trait + Video_Gender + Country + (1 | PID
 
 summary(trait_model0)
 
+#model1: all demographic factors
 
-#income model
-income_model<- glmer(Conformity_pref ~ Trait + income_annual+ Country+ (1 | PID) , data = MV_income_omit, family=binomial(link = "logit"))
+trait_model1<- glmer(Conformity_pref ~ Trait + Video_Gender + Country+ SES+  Age+ Education+ Gender+ Edu_asp+(1 | PID) , data = MV_final, family=binomial(link = "logit"))
 
-summary(income_model)
+summary(trait_model1) 
 
-tab_model(income_model)
+##model with all three traits
 
-#occupation only model 
+trait3_model<- glmer(Conformity_pref ~ Trait + Video_Gender + Country+ SES+  Age+ Education+ Gender+ Edu_asp+(1 | PID) , data = MV_final, family=binomial(link = "logit"))
 
-MV_final$occupation<- ifelse(grepl(",", MV_final$occupation, fixed=TRUE), "More than one type of job", MV_final$occupation)
+summary(trait_model1) 
 
-occup_model<- glmer(Conformity_pref ~ Trait + occupation + Country+ (1 | PID) , data = MV_final, family=binomial(link = "logit"))
+#model2: final model with only education, age and edu asp as controls (based on literature)
 
-summary(occup_model)
+MV_final$Trait<- relevel(MV_final$Trait, ref="Grades")
+MV_final$Trait<- relevel(MV_final$Trait, ref="Behave")
 
-#parent model
-parent_model<- glmer(Conformity_pref ~ Trait + parent + Country+ (1 | PID) , data = MV_final, family=binomial(link = "logit"))
+trait_model2<- glmer(Conformity_pref ~ Trait + Video_Gender + Country+ Age+ SES+ Education +(1 | PID) , data = MV_final, family=binomial(link = "logit"))
 
-summary(parent_model)
+MV_final$Why<- as.factor(MV_final$Why)
+                         
+MV_final$Why<- relevel(MV_final$Why, ref="Irrel/Null")
+
+#With 6 categories
+trait_model_openend6<- glmer(Conformity_pref ~ Trait + Video_Gender + Why+ Country+ Age+ SES+ Education +(1 | PID) , data = MV_final, family=binomial(link = "logit"))
+
+summary(trait_model_openend6)
+tab_model(trait_model_openend6)
 
 
-###FINAL MODEL: trait+ video gender+ country + important demographic factors added for control
+#with 3 categories
+trait_model_openend3<- glmer(Conformity_pref ~ Trait + Video_Gender + Why+ Country+ Age+ SES+ Education +(1 | PID) , data = MV_final, family=binomial(link = "logit"))
 
-trait_model1<- glmer(Conformity_pref ~ Trait + Video_Gender + Country+ SES+  Age+ Gender + Education +(1 | PID) , data = MV_final, family=binomial(link = "logit"))
+summary(trait_model_openend3)
+tab_model(trait_model_openend3)
 
-trait_model1
+summary(trait_model2)
+ANOV<-anova(trait_model2, test = "f")
+
+summary(ANOV)
+ANOV
+
+aov(Conformity_pref~Trait+Video_Gender + Country+ Age+ SES, data=MV_final)
+
+trait_model2<- aov(Conformity_pref~Trait+Video_Gender + Country+ Age+ SES +Educcation, data=MV_final)
+
+summary(trait_model2)
+
+library(broom.mixed)
+tidy(trait_model2,conf.int=TRUE,exponentiate=TRUE,effects="fixed")
 
 
-summary(trait_model1)
+tab_model(trait_model2)
+pf(5.091, 2, 9, lower.tail=FALSE)
 
 library(lmerTest)
 
 
-Anova(trait_model1, type = "II", ddf = "lme4")
+Anova(trait_model2, type = "II", ddf = "lme4")
 
-library(mlogit)
+
+
+anova(trait_model0,trait_model1, trait_model2) #interestingly the full model (all controls) has a better AIC, so maybe we can leave in all those demo factors?
+
+tab_model(trait_model0, trait_model1, trait_model2)
+
+#income added -> not significant
+income_model<- glmer(Conformity_pref ~ Trait + Video_Gender + Country+ Edu_asp + income_annual+ (1 | PID) , data = MV_income_omit, family=binomial(link = "logit"))
+
+summary(income_model)
+
+
+
+#income only
+income_only_model<- glmer(Conformity_pref ~ Trait + income_annual+ (1 | PID) , data = MV_income_omit, family=binomial(link = "logit"))
+
+summary(income_only_model)
+
+#occupation only model -> not significant
+MV_final$occupation<- ifelse(grepl(",", MV_final$occupation, fixed=TRUE), "More than one type of job", MV_final$occupation)
+
+occup_model<- glmer(Conformity_pref ~ Trait + occupation + (1 | PID) , data = MV_final, family=binomial(link = "logit"))
+
+summary(occup_model)
+
+
+#pairwise comparison
+pairwise.t.test(MV_final$Conformity_pref, MV_final$Trait, p.adjust.method = "bonferroni")
+
 # post hoc for multiple linear regression
 library(multcomp) # for adjusted
 library(emmeans) # for as.glht, pairs, emmeans
 library(lsmeans)
-trait_model<- lsmeans::ref.grid(trait_model1)
+trait_model<- lsmeans::ref.grid(trait_model2)
 # or, using the bonferroni correction
 summary(emmeans::emmeans(trait_model, pairwise ~ Trait, adjust="bonferroni", mode="linear.predictor", type="Score"))
 
-emmeans(trait_model1, "Trait")
+emmeans(trait_model2, "Trait")
 #Trait     emmean    SE  df asymp.LCL asymp.UCL
 # Behave   2.59 0.142 Inf      2.31      2.86
 # Grades   1.75 0.119 Inf      1.51      1.98
 # Smart    1.23 0.109 Inf      1.01      1.44
 
-FinalModel <- emmeans(trait_model1, specs = pairwise ~ "Trait", type ="Score")
+FinalModel <- emmeans(trait_model2, specs = pairwise ~ "Trait", type ="Score")
 summary(FinalModel)#this works the same as the above formula
 #try get cis now
 FinalModel$contrasts %>%
   summary(infer =TRUE)
-
-
-
-
 ```
-
 

@@ -21,6 +21,24 @@ conf_prop<- as.data.frame(conf_prop)
 
 conf_prop<-conf_prop[!(conf_prop$Conformity_pref == 0),]
 
+#for gender only
+conf_prop_gen<-prop.table(with(MV_final, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_gen <- as.data.frame(conf_prop_gen)
+
+conf_prop_gen<-conf_prop_gen[!(conf_prop_gen$Conformity_pref == 0),]
+
+conf_prop_gen
+
+#for trait only
+conf_prop_trait<-prop.table(with(MV_final, table(Conformity_pref, Trait)), margin=2)
+
+
+conf_prop_trait <- as.data.frame(conf_prop_trait)
+
+conf_prop_trait<-conf_prop_trait[!(conf_prop_trait$Conformity_pref == 0),]
+
+conf_prop_trait
 
 #calaculate errors 
 
@@ -30,6 +48,9 @@ df1$Country=as.factor(df1$Country)
 
 df1$Freq<-df1$Freq*10
 
+#get proportion for male vs female endorsment across all trait
+
+sum(Video_gender=Female)
 
 df1$Trait<- relevel(df1$Trait, "Smart", "Behave", "Grades")
 df1$Country<- relevel(df1$Country, "Australia", "Canada", "NZ", "UK", "US")
@@ -46,4 +67,63 @@ ggplot(df1,
 
 
 ```
+```{r open ended}
 
+##Open ended responses - visuals
+
+y<- c(1)
+
+
+MV_final$Trait_why <- factor(MV_final$Trait_why, levels = c("Smart_reason", "Behave_reason", "Grades_reason"))
+
+# gender
+ggplot(MV_final, aes(y=y, x=Trait_why, fill=Why, ylim(0,1)))+
+  geom_bar(position="fill", stat="identity")+
+  ylab("Percentage of justification used")+
+  xlab("Trait")+
+  scale_fill_discrete(name = "Type of justification") +
+ scale_x_discrete(labels=c("Smart", "Behave", "Grades")) +
+  facet_wrap(~Video_Gender, labeller=as_labeller (c("1"="Male", "2"="Female")))
+
+# conformity
+ggplot(MV_final, aes(y=y, x=Trait_why, fill=Why, ylim(0,1)))+
+  geom_bar(position="fill", stat="identity")+
+  ylab("Percentage of justification used")+
+  xlab("Trait")+
+  scale_fill_discrete(name = "Type of justification")+
+  scale_x_discrete(labels=c("Smart", "Behave", "Grades"))+
+  facet_wrap(~Conformity_pref, labeller=as_labeller(c("0"="Low conformity", "1"="High conformity")))
+
+## reduce to 3 categories only
+
+MV_final$Why<- ifelse(grepl ("Behavioral" , MV_final$Why, fixed=TRUE),"Behave/Norm", MV_final$Why)
+MV_final$Why<- ifelse(grepl ("2" , MV_final$Why, fixed=TRUE),"Behave/Norm", MV_final$Why)
+MV_final$Why<- ifelse(grepl ("3" , MV_final$Why, fixed=TRUE),"Cog/Personality", MV_final$Why)
+MV_final$Why<- ifelse(grepl ("4" , MV_final$Why, fixed=TRUE),"Cog/Personality", MV_final$Why)
+
+MV_final$Why<- ifelse(grepl ("5" , MV_final$Why, fixed=TRUE),"Irrel/Null", MV_final$Why)
+MV_final$Why<- ifelse(grepl ("6" , MV_final$Why, fixed=TRUE),"Irrel/Null", MV_final$Why)
+
+
+##graph these three larger categories
+
+#by gender
+ggplot(MV_final, aes(y=y, x=Trait_why, fill=Why, ylim(0,1)))+
+  geom_bar(position="fill", stat="identity")+
+  ylab("Percentage of justification used")+
+  xlab("Trait")+
+  scale_fill_discrete(name = "Type of justification") +
+ scale_x_discrete(labels=c("Smart", "Behave", "Grades")) +
+  facet_wrap(~Video_Gender, labeller=as_labeller (c("1"="Male", "2"="Female")))
+
+#by conformity
+ggplot(MV_final, aes(y=y, x=Trait_why, fill=Why, ylim(0,1)))+
+  geom_bar(position="fill", stat="identity")+
+  ylab("Percentage of justification used")+
+  xlab("Trait")+
+  scale_fill_discrete(name = "Type of justification")+
+  scale_x_discrete(labels=c("Smart", "Behave", "Grades"))+
+  facet_wrap(~Conformity_pref, labeller=as_labeller(c("0"="Low conformity", "1"="High conformity")))
+
+
+```

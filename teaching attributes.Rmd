@@ -1,0 +1,80 @@
+---
+title: "Teaching styles"
+author: "Ajna Kertesz"
+date: '2022-08-08'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Teaching attributes by country
+
+```{r teach}
+
+library(dplyr)
+
+#select teaching items
+MV_teaching= MV_WEIRD %>% dplyr::select (Teach_expect_1, Teach_expect_2, Teach_expect_3, Teach_expect_4, Teach_expect_5, Teach_expect_6, Country, PID)
+
+
+#dummy code teaching
+MV_teaching<- pivot_longer(
+  MV_teaching,
+  cols=(c(Teach_expect_1, Teach_expect_2, Teach_expect_3, Teach_expect_4, Teach_expect_5, Teach_expect_6)),
+  names_to = "Teaching style",
+  values_to = "Ranking",
+  values_drop_na = TRUE
+)
+
+#recode countries to meaningful characters
+MV_teaching$Country<- recode_factor(MV_teaching$Country, `1`="US", `2`="Canada", `3`="UK", `4`="Australia", `5`="NZ")
+
+#recode teaching style
+MV_teaching$`Teaching style`<- ifelse(grepl("Teach_expect_1", MV_teaching$`Teaching style`, fixed=TRUE), "Rote", MV_teaching$`Teaching style`)
+MV_teaching$`Teaching style`<- ifelse(grepl("Teach_expect_2", MV_teaching$`Teaching style`, fixed=TRUE), "Rote", MV_teaching$`Teaching style`)
+MV_teaching$`Teaching style`<- ifelse(grepl("Teach_expect_5", MV_teaching$`Teaching style`, fixed=TRUE), "Rote", MV_teaching$`Teaching style`)
+
+MV_teaching$`Teaching style`<- ifelse(grepl("Teach_expect_3", MV_teaching$`Teaching style`, fixed=TRUE), "Free", MV_teaching$`Teaching style`)
+MV_teaching$`Teaching style`<- ifelse(grepl("Teach_expect_4", MV_teaching$`Teaching style`, fixed=TRUE), "Free", MV_teaching$`Teaching style`)
+
+MV_teaching$`Teaching style`<- ifelse(grepl("Teach_expect_6", MV_teaching$`Teaching style`, fixed=TRUE), "Balanced", MV_teaching$`Teaching style`)
+
+#calaculate errors with function
+
+data_summary <- function(data, varname, groupnames){
+  require(plyr)
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      sd = sd(x[[col]], na.rm=TRUE))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+ return(data_sum)
+}
+
+
+#add errors to dataframe (geom_errorbar...)
+
+df <- data_summary(MV_teaching, varname = "Ranking",
+                            groupnames=c("Country","`Teaching style`" ))
+
+df$Country=as.factor(df$Country)
+df$`Teaching style`=as.factor(df$`Teaching style`)
+
+##create second figure
+
+ggplot(df,
+       aes(`Teaching style`, y= Ranking, x= Country, fill=`Teaching style`, color=`Teaching style`)) +
+  geom_point(stat = "summary", fun.y = "mean", shape = 16, size =3, position=position_dodge(width=0.5)) +
+  geom_errorbar(aes(ymin = Ranking - sd, ymax = Ranking + sd, width=0.5), linetype = "dotted", position=position_dodge(width=0.5))+
+  scale_y_continuous() +
+  ylab("Preference") +
+  scale_fill_brewer(palette = "Dark2") +
+  theme(legend.position = "right")
+  
+  
+
+```

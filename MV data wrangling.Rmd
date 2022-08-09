@@ -138,11 +138,11 @@ MV_final$income_annual<- ifelse(grepl ("More than $160,000" , MV_final$income_an
 MV_final$income_annual<- ifelse(grepl ("More than $100,000" , MV_final$income_annual, fixed=TRUE),"6", MV_final$income_annual)
 MV_final$income_annual<- ifelse(grepl ("More than £92,401" , MV_final$income_annual, fixed=TRUE),"6", MV_final$income_annual)
 
-MV_income_omit$income_annual
+
 
 
 MV_final <- droplevels(subset(MV_final, income_annual != "I don't know"))
-MV_income_omit
+
 
 ##recode gender
 MV_final$Gender<- ifelse(grepl ("Transgender female" , MV_final$Gender, fixed=TRUE),"Other", MV_final$Gender)
@@ -186,6 +186,11 @@ MV_final <- within(MV_final, {
 })
 
 MV_income_omit <- droplevels(subset(MV_final, income_annual != "I don't know"))
+MV_income_omit$income_annual
+
+write.csv(MV_final,"MV_final.csv", row.names = FALSE, fileEncoding = 'UTF-8')
+
+
 
 ```
 

@@ -9,22 +9,68 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+```{r prop test}
+library(tidyverse)
+library(readr)
+library(dplyr)
+library(psych)
+library(knitr)
+library(plyr)
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+MV_final <- read.csv("MV_final.csv")
 
-```{r cars}
-summary(cars)
+############make tables
+table(MV_final$Video_Gender, MV_final$Trait, MV_final$Conformity_pref, MV_final$Why, MV_final$Country)
+
+table(MV_final$Video_Gender, MV_final$Trait, MV_final$Conformity_pref)
+
+table(MV_final$Trait, MV_final$Conformity_pref)
+
+###difference between Traits
+
+##Smart (low vs high)
+prop.test(1209, 3681, p = NULL,
+          alternative = c("two.sided"),
+          conf.level = 0.95, correct = TRUE)
+##Behave(low vs high)
+prop.test(624, 3666, p = NULL,
+          alternative = c("two.sided"),
+          conf.level = 0.95, correct = TRUE)
+##Grades(low vs high)
+prop.test(963, 3681, p = NULL,
+          alternative = c("two.sided"),
+          conf.level = 0.95, correct = TRUE)
+
+##Smart vs Grades in low conformity
+prop.test(x=c(1209, 963), n=c(4005,4005), p = NULL,
+          alternative = "two.sided",
+          conf.level = 0.95, correct = TRUE)
+
+##Behave vs Grades in low conformity
+prop.test(x=c(624, 963), n=c(4005,4005), p = NULL,
+          alternative = "two.sided",
+          conf.level = 0.95, correct = TRUE)
+
+##Smart vs Grades in high conformity
+
+prop.test(x=c(2472, 2718), n=c(8232,8232), p = NULL,
+          alternative = "two.sided",
+          conf.level = 0.95, correct = TRUE)
+
+##Behave vs Grades in high conformity
+prop.test(x=c(2472, 2718), n=c(8232,8232), p = NULL,
+          alternative = "two.sided",
+          conf.level = 0.95, correct = TRUE)
+
+###visual tables
+
+library(janitor)
+library(table1)
+
+table1(~ Trait  | Video_Gender*Conformity_pref, data=MV_final)
+table1(~ Country  | Video_Gender*Conformity_pref, data=MV_final)
+table1(~ Country  | Trait*Conformity_pref, data=MV_final)
+
+
 ```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -34,10 +34,9 @@ MV_WEIRD <- merge(MV_WEIRD, MV_code,by=c("PID"))
 
 
  #select variables
-MV_final = MV_WEIRD %>% dplyr::select(Smart, Behave, Grades, Age, Gender, Country, Video_Gender, parent, Education, PID, SES, Edu_asp, income_annual, occupation, Smart_reason, Behave_reason, Grades_reason) %>%  
+MV_final = MV_WEIRD %>% dplyr::select(Smart, Behave, Grades, Age, Gender, Country, Video_Gender, parent, Education, PID, SES, Edu_asp, income_annual, occupation, Smart_reason, Behave_reason, Grades_reason, Teach_expect_1,Teach_expect_2, Teach_expect_3,Teach_expect_4, Teach_expect_5 ,Teach_expect_6, school_values_1,school_values_2, school_values_3, school_values_4,school_values_5, school_values_6) %>%  
   mutate(Age = as.numeric(Age),
         parent= ifelse(MV_WEIRD$parent=="Yes",1,0))
-
 
 
 #recode countries to meaningful characters
@@ -191,6 +190,37 @@ MV_income_omit$income_annual
 write.csv(MV_final,"MV_final.csv", row.names = FALSE, fileEncoding = 'UTF-8')
 
 
+###check data length
+ length(which(MV_final$Country=="Australia"& MV_final$Trait=="Behave"))
+ 
+ 
+ 
+ #Create Subdatasets by country
+ 
+US_data<- MV_final[MV_final$Country == "US",]
+US_smart<-US_data[US_data$Trait == "Smart",]
+US_behave<-US_data[US_data$Trait == "Behave",]
+US_grades<-US_data[US_data$Trait == "Grades",]
+
+UK_data<- MV_final[MV_final$Country == "UK",]
+UK_smart<-UK_data[UK_data$Trait == "Smart",]
+UK_behave<-UK_data[UK_data$Trait == "Behave",]
+UK_grades<-UK_data[UK_data$Trait == "Grades",]
+
+CA_data<- MV_final[MV_final$Country == "Canada",]
+CA_smart<-CA_data[CA_data$Trait == "Smart",]
+CA_behave<-CA_data[CA_data$Trait == "Behave",]
+CA_grades<-CA_data[CA_data$Trait == "Grades",]
+
+NZ_data<- MV_final[MV_final$Country == "NZ",]
+NZ_smart<-NZ_data[NZ_data$Trait == "Smart",]
+NZ_behave<-NZ_data[NZ_data$Trait == "Behave",]
+NZ_grades<-NZ_data[NZ_data$Trait == "Grades",]
+
+AU_data<- MV_final[MV_final$Country == "Australia",]
+AU_smart<-AU_data[AU_data$Trait == "Smart",]
+AU_behave<-AU_data[AU_data$Trait == "Behave",]
+AU_grades<-AU_data[AU_data$Trait == "Grades",]
 
 ```
 
@@ -200,14 +230,44 @@ write.csv(MV_final,"MV_final.csv", row.names = FALSE, fileEncoding = 'UTF-8')
 library(psych)
 
 ##Natalia and Ajna
-IRR <- read_csv("IRR.csv")
-IRR<-drop_na(IRR)
-
-IRR<- as.data.frame(IRR)
-
-cohen.kappa(IRR)
+#IRR <- read_csv("IRR.csv")
+#IRR<-drop_na(IRR)
+#
+#IRR<- as.data.frame(IRR)
+#
+#cohen.kappa(IRR)
 
 ```
 
+```{r power}
 
+# Load necessary libraries
+library(lme4)
+library(sjstats)
+library(psych)
+
+
+model<- glmer(Conformity_pref ~ Trait + Video_Gender + Country+ Age+ SES+ Education +(1 | PID) , data = MV_final, family=binomial(link = "logit"))
+
+
+# Calculate R-squared for fixed effects
+r_squared <- performance::r2(model)
+
+
+# Calculate ICC
+icc <- performance::icc(model)
+
+# Calculate standardized coefficients
+std_coefs <-standardize(model)
+
+# Print results
+cat("R-squared for fixed effects: ", r_squared$fixed[2], "\n")
+cat("icc: ", icc, "\n")
+cat("Standardized coefficients:\n")
+print(std_coefs)
+
+icc
+r_squared
+model
+```
 

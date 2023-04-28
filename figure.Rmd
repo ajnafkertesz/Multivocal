@@ -10,7 +10,22 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r visual}
+```{r visual across country}
+
+#MV_final$Country <- factor(MV_final$Country, levels=c("Australia", "Canada", "NZ", "UK", "US"))
+
+MV_final$Country <- recode_factor(MV_final$Country, US= "US", Canada = "Can", UK = "UK", Australia = "Aus", 
+                                NZ = "NZ")
+
+
+MV_final$Country <-fct_relevel(MV_final$Country, "US", "Can", "Aus", "UK", "NZ")
+
+#str(MV_final$Country)
+#unique(MV_final$Country)
+
+MV_final$Trait <- factor(MV_final$Trait, levels=c("Smart", "Behave", "Grades"))
+
+
 
 ###OVERALL CONFORMITY PREFERENCE###
 #visual
@@ -50,11 +65,12 @@ df1$Freq<-df1$Freq*10
 
 #get proportion for male vs female endorsment across all trait
 
-sum(Video_gender=Female)
+sum(Video_gender=2)
 
-df1$Trait<- relevel(df1$Trait, "Smart", "Behave", "Grades")
-df1$Country<- relevel(df1$Country, "Australia", "Canada", "NZ", "UK", "US")
 
+##create a vector for stat differences
+
+shape <- c(rep(16, 15), rep(23, 15))
 
 ### create the figure
 ggplot(df1, 
@@ -62,11 +78,120 @@ ggplot(df1,
   geom_point(stat = "summary", fun.y = "mean", shape= 16, size =3, position = position_dodge(width = 1)) +
   geom_errorbar(aes(ymin = Freq - sd, ymax = Freq + sd),linetype = "dotted", position = position_dodge(width = 1))+
   facet_wrap(vars(Trait)) + 
+  ylab ("Proportion Choosing High-Fidelity Copying Child") +
+  scale_color_manual(labels = c("Male", "Female"), values = c("Dark green", "Dark orange"))
+
+
+```
+
+```{r visual for US}
+###OVERALL CONFORMITY PREFERENCE###
+#visual
+#create prop table
+##US
+conf_prop_US_smar<-prop.table(with(US_smart, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_US_smar 
+
+conf_prop_US_beh<-prop.table(with(US_behave, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_US_beh
+
+conf_prop_US_grad<-prop.table(with(US_grades, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_US_grad
+
+###UK
+conf_prop_UK_smar<-prop.table(with(UK_smart, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_UK_smar 
+
+conf_prop_UK_beh<-prop.table(with(UK_behave, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_UK_beh
+
+conf_prop_UK_grad<-prop.table(with(UK_grades, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_UK_grad
+
+##CAN
+conf_prop_CA_smar<-prop.table(with(CA_smart, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_CA_smar 
+
+conf_prop_CA_beh<-prop.table(with(CA_behave, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_CA_beh
+
+conf_prop_CA_grad<-prop.table(with(CA_grades, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_CA_grad
+
+##AUS
+
+conf_prop_AU_smar<-prop.table(with(AU_smart, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_AU_smar 
+
+conf_prop_AU_beh<-prop.table(with(AU_behave, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_AU_beh
+
+conf_prop_AU_grad<-prop.table(with(AU_grades, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_AU_grad
+
+##NZ
+
+conf_prop_NZ_smar<-prop.table(with(NZ_smart, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_NZ_smar 
+
+conf_prop_NZ_beh<-prop.table(with(NZ_behave, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_NZ_beh
+
+conf_prop_NZ_grad<-prop.table(with(NZ_grades, table(Conformity_pref, Video_Gender)), margin=2)
+
+conf_prop_NZ_grad
+                      
+conf_prop_US<- as.data.frame(conf_prop_US)
+
+conf_prop_US<-conf_prop_US[!(conf_prop_US$Conformity_pref == 0),]
+
+
+
+#calaculate errors 
+
+dfUS <- conf_prop_US %>% mutate(sd = sd(Freq))
+
+#dfUS$Country=as.factor(dfUS$Country)
+
+
+#get proportion for male vs female endorsment across all trait
+
+sum(Video_gender=2)
+
+dfUS$Trait<- relevel(dfUS$Trait, "Smart", "Behave", "Grades")
+#dfUS$Country<- relevel(dfUS$Country, "Australia", "Canada", "NZ", "UK", "US")
+
+##create a vector for stat differences
+
+shape <- c(rep(16, 15), rep(23, 15))
+
+### create the figure
+
+ggplot(dfUS, 
+       aes(Video_Gender, y = Freq, x = Video_Gender, color = Video_Gender, ylim(0.1,1.0))) + 
+  geom_point(stat = "summary", fun.y = "mean", shape= 5, size =3, position = position_dodge(width = 1)) +
+  geom_errorbar(aes(ymin = Freq - sd, ymax = Freq + sd),linetype = "dotted", position = position_dodge(width = 1))+
+  facet_wrap(vars(Trait)) + 
   ylab ("Proportion of Conformity Endorsement") +
   scale_color_manual(labels = c("Male", "Female"), values = c("Blue", " dark Red"))
 
 
 ```
+
 ```{r open ended}
 
 ##Open ended responses - visuals

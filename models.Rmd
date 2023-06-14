@@ -12,21 +12,120 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ````{r  conformity}
 
+###check for trait interactions
+##pivot data by trait
+
+MV_final$Smart <- as.integer(MV_final$Trait == "Smart")
+MV_final$Grades <- as.integer(MV_final$Trait == "Grades")
+MV_final$Behave <- as.integer(MV_final$Trait == "Behave")
+
+
+#MV_final$Country_contr<- contr.sum(MV_final$Country)
+
+#str(MV_final$Country_contr)
+
+#model <- glmer(Conformity_pref ~ Country_contr + (1 | PID), data = MV_final,family = binomial(link = "logit"))
+
+#summary(model)
+
+#overall_effect <- coef(summary(trait_model0))["Country", "Estimate"]
+
+#summary(trait_model0)
+
+#run model w interaction
+interact_model<- glmer(Conformity_pref ~ Smart*Behave*Grades +Video_Gender + Country + (1 | PID) , data = MV_final, family=binomial(link = "logit"))
+
+summary(interact_model)
+tab_model(interact_model)
+
+summary(glmer(Conformity_pref ~ Trait*Video_Gender + (1 | PID) , data = MV_final, family=binomial(link = "logit")))
+
+interact_model0<- glmer(Conformity_pref ~ Smart*Behave*Grades + (1 | PID) , data = MV_final, family=binomial(link = "logit"))
+
+interact_modelcountry<- glmer(Conformity_pref ~ Trait*Country + (1 | PID) , data = MV_final, family=binomial(link = "logit"))
+
+summary(interact_modelcountry)
+tab_model(interact_modelcountry)
+
+interact_modelgender<- glmer(Conformity_pref ~ Trait*Video_Gender + (1 | PID) , data = MV_final, family=binomial(link = "logit"))
+
+
+summary(interact_modelgender)
+tab_model(interact_modelgender)
+
+interact_modelall<- glmer(Conformity_pref ~ Trait*Video_Gender*Country + (1 | PID) , data = MV_final, family=binomial(link = "logit"))
+
+summary(interact_modelall)
+tab_model(interact_modelall)
+
+str(MV_final$Trait)
+str(MV_final$Country)
+
+
+
+interact_model2<- glmer(Conformity_pref ~ Trait*Video_Gender+Trait*Country + (1 | PID) , data = MV_final, family=binomial(link = "logit"))
+tab_model(interact_model2)
+
+summary(lm(Conformity_pref ~ Smart*Behave*Grades, data = MV_final))
+
+dput(MV_final)
+dput(head(MV_final[, c("Conformity_pref", "PID", "Smart", "Behave", "Grades")]))
+
+unique(MV_final$PID)
+
+summary(interact_model0)
+tab_model(interact_model0)
 
 ######
 #null model: just trait and video gender 
 
-MV_final$Country<- relevel(MV_final$Country, ref="NZ")
+
+MV_final$Country<- relevel(MV_final$Country, ref="US")
+
+MV_final$Trait<- relevel(MV_final$Trait, ref="Behave")
+
+null_model<- glmer(Conformity_pref ~ Trait + Video_Gender  + (1 | PID) , data = MV_final, family=binomial(link = "logit"))
+
+summary(null_model)
+tab_model (null_model)
+
+null_modelinter<- glmer(Conformity_pref ~ Trait * Video_Gender  + (1 | PID) , data = MV_final, family=binomial(link = "logit"))
 
 trait_model0<- glmer(Conformity_pref ~ Trait + Video_Gender + Country + (1 | PID) , data = MV_final, family=binomial(link = "logit"))
 
 summary(trait_model0)
+tab_model (trait_model0)
+
+str(MV_final$Country)
+
+drop_result0 <- drop1(trait_model0, test = "Chisq")
+summary(drop_result0)
+tab_model(drop_result0)
+main_effects <- drop_result0[, "Pr(Chi)"]
+
+library(afex) 
+mixed(Conformity_pref ~ Trait + Video_Gender + Country + (1|PID),
+      family = binomial(link="logit"), data = MV_final, method="PB")
+
+
+trait_modelincome<- glmer(Conformity_pref ~ Trait + Video_Gender + Country + income_annual +(1 | PID) , data = MV_final, family=binomial(link = "logit"))
+
+summary(trait_modelincome)
+tab_model (trait_modelincome)
+
+trait_modelparent<- glmer(Conformity_pref ~ Trait + Video_Gender + Country + parent +(1 | PID) , data = MV_final, family=binomial(link = "logit"))
+
+summary(trait_modelparent)
+tab_model (trait_modelparent)
+
+MV_final$occupation
 
 #model1: all demographic factors
 
 trait_model1<- glmer(Conformity_pref ~ Trait + Video_Gender + Country+ SES+  Age+ Education+ Gender+ Edu_asp+(1 | PID) , data = MV_final, family=binomial(link = "logit"))
 
 summary(trait_model1) 
+
 
 ##model with all three traits
 
@@ -40,6 +139,13 @@ MV_final$Trait<- relevel(MV_final$Trait, ref="Grades")
 MV_final$Trait<- relevel(MV_final$Trait, ref="Behave")
 
 trait_model2<- glmer(Conformity_pref ~ Trait + Video_Gender + Country+ Age+ SES+ Education +(1 | PID) , data = MV_final, family=binomial(link = "logit"))
+
+ glmer(Conformity_pref ~ Country+ Trait + Video_Gender + Age+ SES+ Education +(1 | PID) , data = MV_final, family=binomial(link = "logit"))
+
+tab_model(trait_model2)
+summary(trait_model2)
+
+MV_final$Country
 
 MV_final$Why<- as.factor(MV_final$Why)
                          
@@ -66,11 +172,13 @@ ANOV
 
 aov(Conformity_pref~Trait+Video_Gender + Country+ Age+ SES, data=MV_final)
 
-trait_model2<- aov(Conformity_pref~Trait+Video_Gender + Country+ Age+ SES +Educcation, data=MV_final)
+trait_model2<- aov(Conformity_pref~Trait+Video_Gender + Country+ Age+ SES +Education, data=MV_final)
 
 summary(trait_model2)
 
-library(broom.mixed)
+
+
+library(broom.mixed)                                        
 tidy(trait_model2,conf.int=TRUE,exponentiate=TRUE,effects="fixed")
 
 
@@ -81,9 +189,19 @@ library(lmerTest)
 
 
 Anova(trait_model2, type = "II", ddf = "lme4")
+Anova(interact_modelall)
+Anova(interact_modelcountry)
+Anova(interact_modelgender)
+Anova(interact_model2,  type = "II", ddf = "lme4")
+Anova(trait_model0,  type = "II", ddf = "lme4")
+Anova(trait_modelincome,  type = "II", ddf = "lme4")
+Anova(trait_modelparent,  type = "II", ddf = "lme4")
+Anova(null_modelinter,  type = "II", ddf = "lme4")
 
+library(AICcmodavg)
 
-
+aictab(cand.set=c(null_modelinter, trait_model0))
+summary(trait_model2)
 anova(trait_model0,trait_model1, trait_model2) #interestingly the full model (all controls) has a better AIC, so maybe we can leave in all those demo factors?
 
 tab_model(trait_model0, trait_model1, trait_model2)
@@ -99,6 +217,7 @@ summary(income_model)
 income_only_model<- glmer(Conformity_pref ~ Trait + income_annual+ (1 | PID) , data = MV_income_omit, family=binomial(link = "logit"))
 
 summary(income_only_model)
+tab_model(income_only_model)
 
 #occupation only model -> not significant
 MV_final$occupation<- ifelse(grepl(",", MV_final$occupation, fixed=TRUE), "More than one type of job", MV_final$occupation)

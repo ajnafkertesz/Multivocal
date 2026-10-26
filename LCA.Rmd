@@ -1,6 +1,6 @@
 ---
 title: "LCA for teaching styles"
-author: "Ajna Kertesz"
+author: "hidden"
 date: '2022-08-08'
 output: html_document
 ---
